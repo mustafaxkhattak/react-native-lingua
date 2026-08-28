@@ -1,3 +1,4 @@
+import { useSSO, useSignIn, useSignUp } from "@clerk/expo";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
@@ -14,13 +15,16 @@ type AuthScreenProps = {
 };
 
 const socialOptions = [
-  { label: "Continue with Google", mark: "G", markClass: "text-[#4285f4]" },
-  { label: "Continue with Facebook", mark: "f", markClass: "text-[#1877f2]" },
+  { label: "Continue with Google", mark: "G", markClass: "text-[#4285f4]", strategy: "oauth_google" as const },
+  { label: "Continue with Facebook", mark: "f", markClass: "text-[#1877f2]", strategy: "oauth_facebook" as const },
 ];
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function AuthScreen({ mode }: AuthScreenProps) {
+  const { signIn, fetchStatus: signInFetchStatus } = useSignIn();
+  const { signUp, fetchStatus: signUpFetchStatus } = useSignUp();
+  const { startSSOFlow } = useSSO();
   const { height } = useWindowDimensions();
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
@@ -28,20 +32,132 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [verificationVisible, setVerificationVisible] = useState(false);
+  const [verificationType, setVerificationType] = useState<"sign-up" | "sign-in">("sign-up");
   const isSignUp = mode === "sign-up";
   const isCompact = height < 760;
 
-  function handleAuthPress() {
-    const normalizedEmail = email.trim();
+  function showClerkError(error: unknown) {
+    if (typeof error === "object" && error !== null) {
+      if ("longMessage" in error && typeof error.longMessage === "string") {
+        Alert.alert("Authentication error", error.longMessage);
+        return;
+      }
 
-    if (!emailPattern.test(normalizedEmail)) {
-      Alert.alert("Invalid email", "Please enter a valid email");
-      emailInputRef.current?.focus();
+      if ("errors" in error && Array.isArray(error.errors)) {
+        const firstError = error.errors[0];
+        if (typeof firstError === "object" && firstError !== null) {
+          if ("longMessage" in firstError && typeof firstError.longMessage === "string") {
+            Alert.alert("Authentication error", firstError.longMessage);
+            return;
+          }
+
+          if ("message" in firstError && typeof firstError.message === "string") {
+            Alert.alert("Authentication error", firstError.message);
+            return;
+          }
+        }
+      }
+    }
+
+    if (error instanceof Error) {
+      Alert.alert("Authentication error", error.message);
       return;
     }
 
-    setEmail(normalizedEmail);
-    setVerificationVisible(true);
+    Alert.alert("Authentication error", "We could not complete authentication. Please try again.");
+  }
+
+  async function handleAuthPress() {
+    try {
+      const normalizedEmail = email.trim();
+
+      if (!emailPattern.test(normalizedEmail)) {
+        Alert.alert("Invalid email", "Please enter a valid email");
+        emailInputRef.current?.focus();
+        return;
+      }
+
+      if (isSignUp && password.length < 8) {
+        Alert.alert("Invalid password", "Your password must be at least 8 characters");
+        passwordInputRef.current?.focus();
+        return;
+      }
+
+      setEmail(normalizedEmail);
+
+      if (isSignUp) {
+        const { error } = await signUp.password({ emailAddress: normalizedEmail, password });
+        if (error) {
+          showClerkError(error);
+          return;
+        }
+
+        const { error: sendError } = await signUp.verifications.sendEmailCode();
+        if (sendError) {
+          showClerkError(sendError);
+          return;
+        }
+
+        setVerificationType("sign-up");
+        setVerificationVisible(true);
+        return;
+      }
+
+      const { error } = await signIn.emailCode.sendCode({ emailAddress: normalizedEmail });
+      if (error) {
+        showClerkError(error);
+        return;
+      }
+
+      setVerificationType("sign-in");
+      setVerificationVisible(true);
+    } catch (error) {
+      showClerkError(error);
+    }
+  }
+
+  async function handleSocialPress(strategy: (typeof socialOptions)[number]["strategy"]) {
+    try {
+      const { createdSessionId, setActive } = await startSSOFlow({ strategy });
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace("/");
+      }
+    } catch (error) {
+      showClerkError(error);
+    }
+  }
+
+  async function handleVerification(code: string) {
+    if (verificationType === "sign-up") {
+      const { error } = await signUp.verifications.verifyEmailCode({ code });
+      if (error) {
+        showClerkError(error);
+        return false;
+      }
+
+      const { error: finalizeError } = await signUp.finalize();
+      if (finalizeError) {
+        showClerkError(finalizeError);
+        return false;
+      }
+    } else {
+      const { error } = await signIn.emailCode.verifyCode({ code });
+      if (error) {
+        showClerkError(error);
+        return false;
+      }
+
+      const { error: finalizeError } = await signIn.finalize();
+      if (finalizeError) {
+        showClerkError(finalizeError);
+        return false;
+      }
+    }
+
+    setVerificationVisible(false);
+    router.replace("/");
+    return true;
   }
 
   return (
@@ -56,6 +172,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         alwaysBounceVertical
         showsVerticalScrollIndicator={false}
       >
+
         <Pressable onPress={() => router.replace("/onboarding")} className={`${isCompact ? "h-8" : "h-10"} w-10 items-start justify-center`}>
           <View style={styles.backChevron} />
         </Pressable>
@@ -97,7 +214,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           />
         </Pressable>
 
-        {!isSignUp && (
+        {isSignUp && (
           <Pressable
             onPress={() => passwordInputRef.current?.focus()}
             className={`${isCompact ? "py-3" : "py-4"} mt-3 rounded-[20px] border border-[#e7e9ef] px-6`}
@@ -110,22 +227,16 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!passwordVisible}
-                showSoftInputOnFocus={true}
                 autoCapitalize="none"
                 autoCorrect={false}
-                placeholder="Enter your password"
-                placeholderTextColor="#68738c"
                 selectionColor={passwordVisible ? "#6c4ef5" : "transparent"}
                 caretHidden={!passwordVisible}
-                style={[styles.passwordInput, !passwordVisible && styles.hiddenPasswordInput]}
+                style={passwordVisible ? styles.passwordInput : styles.hiddenPasswordInput}
                 accessibilityLabel="Password"
               />
               {!passwordVisible && (
-                <Text
-                  pointerEvents="none"
-                  className={`absolute left-0 font-sans text-[16px] ${password.length > 0 ? "text-text-primary" : "text-[#68738c]"}`}
-                >
-                  {password.length > 0 ? "•".repeat(password.length) : "Enter your password"}
+                <Text pointerEvents="none" className="absolute left-0 font-sans text-[16px] text-text-primary">
+                  {password ? "•".repeat(password.length) : "Create a password"}
                 </Text>
               )}
               <Pressable
@@ -139,11 +250,13 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 </Text>
               </Pressable>
             </View>
+            <Text className="mt-1 font-sans text-[12px] text-[#68738c]">At least 8 characters</Text>
           </Pressable>
         )}
 
         <Pressable
           onPress={handleAuthPress}
+          disabled={signInFetchStatus === "fetching" || signUpFetchStatus === "fetching"}
           className={`${isCompact ? "mt-3 h-[58px]" : "mt-5 h-[82px]"} items-center justify-center rounded-[20px] bg-brand-purple active:bg-brand-deep-purple`}
           style={styles.primaryButton}
         >
@@ -161,7 +274,11 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         <View className={isCompact ? "gap-2" : "gap-3"}>
           {socialOptions.map((social, index) => (
             <View key={social.label}>
-              <Pressable className={`${isCompact ? "h-[52px] px-8" : "h-[64px] px-12"} flex-row items-center rounded-[18px] border border-[#eceef2]`}>
+              <Pressable
+                onPress={() => void handleSocialPress(social.strategy)}
+                disabled={signInFetchStatus === "fetching" || signUpFetchStatus === "fetching"}
+                className={`${isCompact ? "h-[52px] px-8" : "h-[64px] px-12"} flex-row items-center rounded-[18px] border border-[#eceef2]`}
+              >
                 <Text className={`${isCompact ? "text-[21px]" : "text-[25px]"} w-10 text-center font-sans font-semibold ${social.markClass}`}>
                   {social.mark}
                 </Text>
@@ -189,11 +306,9 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         visible={verificationVisible}
         email={email}
         onClose={() => setVerificationVisible(false)}
-        onComplete={() => {
-          setVerificationVisible(false);
-          router.replace("/");
-        }}
+        onVerify={handleVerification}
       />
+      {isSignUp && <View nativeID="clerk-captcha" />}
     </SafeAreaView>
   );
 }
@@ -259,8 +374,11 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   hiddenPasswordInput: {
+    flex: 1,
     color: "transparent",
     opacity: 0,
+    fontSize: 16,
+    paddingVertical: 3,
   },
   primaryButton: {
     shadowColor: "#6c4ef5",
