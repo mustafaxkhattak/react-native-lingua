@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -23,17 +23,17 @@ export default function Onboarding() {
               style={styles.logo}
               accessibilityLabel="Lingua mascot"
             />
-            <Text className="font-sans text-[36px] font-semibold text-text-primary">
+            <Text className="font-sans text-[36px] text-text-primary" style={styles.boldText}>
               Lingua
             </Text>
           </View>
         </View>
 
         <View className="pt-7">
-          <Text className="font-sans text-[34px] font-semibold leading-[41px] text-text-primary">
+          <Text className="font-sans text-[34px] leading-[41px] text-text-primary" style={styles.boldText}>
             Your AI language
           </Text>
-          <Text className="font-sans text-[34px] font-semibold leading-[41px] text-brand-purple">
+          <Text className="font-sans text-[34px] leading-[41px] text-brand-purple" style={styles.boldText}>
             teacher.
           </Text>
           <Text className="mt-3 font-sans text-[17px] leading-[27px] text-text-secondary">
@@ -73,17 +73,16 @@ export default function Onboarding() {
           />
         </View>
 
-        <Link href="/" asChild>
-          <Pressable
-            className="absolute bottom-6 left-14 right-14 h-16 flex-row items-center justify-center rounded-[20px] bg-brand-purple active:bg-brand-deep-purple"
-            style={styles.button}
-          >
-            <Text className="font-sans text-[20px] font-semibold text-white">
-              Get Started
-            </Text>
-            <View style={styles.arrow} />
-          </Pressable>
-        </Link>
+        <Pressable
+          onPress={() => router.replace("/sign-up")}
+          className="absolute bottom-6 left-14 right-14 h-16 flex-row items-center justify-center rounded-[20px] bg-brand-purple active:bg-brand-deep-purple"
+          style={styles.button}
+        >
+          <Text className="font-sans text-[20px] font-semibold text-white">
+            Get Started
+          </Text>
+          <View style={styles.arrow} />
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -97,6 +96,9 @@ const styles = StyleSheet.create({
   logo: {
     width: 56,
     height: 56,
+  },
+  boldText: {
+    fontFamily: "Poppins-Bold",
   },
   screenContent: {
     paddingBottom: 88,
