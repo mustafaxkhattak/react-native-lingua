@@ -13,16 +13,17 @@ type VerificationModalProps = {
   visible: boolean;
   email: string;
   onClose: () => void;
-  onComplete: () => void;
+  onVerify: (code: string) => Promise<boolean>;
 };
 
 export function VerificationModal({
   visible,
   email,
   onClose,
-  onComplete,
+  onVerify,
 }: VerificationModalProps) {
   const [code, setCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -38,8 +39,10 @@ export function VerificationModal({
   function handleCodeChange(value: string) {
     const nextCode = value.replace(/\D/g, "").slice(0, 6);
     setCode(nextCode);
-    if (nextCode.length === 6) {
-      onComplete();
+
+    if (nextCode.length === 6 && !isVerifying) {
+      setIsVerifying(true);
+      void onVerify(nextCode).finally(() => setIsVerifying(false));
     }
   }
 

@@ -1,12 +1,22 @@
+import { useAuth } from "@clerk/expo";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { images } from "@/constants/images";
 
 export default function Onboarding() {
+  const { isLoaded, isSignedIn } = useAuth();
   const { width, height } = useWindowDimensions();
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (isSignedIn) {
+    return <Redirect href="/" />;
+  }
   const artworkSize =
     height < 650
       ? Math.max(160, Math.min(240, height - 350))
