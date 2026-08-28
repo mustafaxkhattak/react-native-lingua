@@ -1,5 +1,5 @@
 import { useAuth } from "@clerk/expo";
-import { Redirect, router } from "expo-router";
+import { Link, Redirect, router } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function Index() {
@@ -26,6 +26,11 @@ export default function Index() {
     <View style={styles.container}>
       <Text style={styles.title}>Welcome back</Text>
       <Text style={styles.subtitle}>Your language journey continues here.</Text>
+      <Link href="/language-selection" asChild>
+        <Pressable style={styles.languageButton}>
+          <Text style={styles.languageButtonText}>Choose a language</Text>
+        </Pressable>
+      </Link>
       <Pressable onPress={() => void handleSignOut()} style={styles.signOutButton}>
         <Text style={styles.signOutText}>Sign out</Text>
       </Pressable>
@@ -61,6 +66,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#6c4ef5",
     paddingHorizontal: 24,
     paddingVertical: 14,
+  },
+  languageButton: {
+    marginTop: 28,
+    minWidth: 190,
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#6c4ef5",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+  },
+  languageButtonText: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 16,
+    color: "#6c4ef5",
   },
   signOutText: {
     fontFamily: "Poppins-SemiBold",
