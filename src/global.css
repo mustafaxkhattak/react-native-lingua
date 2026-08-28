@@ -1,0 +1,73 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+@theme {
+	--color-brand-purple: #6c4ef5;
+	--color-brand-deep-purple: #5b3bf6;
+	--color-brand-blue: #4d8bff;
+	--color-brand-green: #21c16b;
+	--color-success: #21c16b;
+	--color-warning: #ffc800;
+	--color-streak: #ff8a00;
+	--color-error: #ff4d4f;
+	--color-info: #4d8bff;
+	--color-text-primary: #0d132b;
+	--color-text-secondary: #6b7280;
+	--color-border: #e5e7eb;
+	--color-surface: #f6f7fb;
+	--color-background: #ffffff;
+	--font-sans: Poppins, System;
+	--radius-card: 16px;
+	--radius-control: 12px;
+}
+
+@utility type__h1 {
+	font-family: Poppins, System;
+	font-size: 32px;
+	line-height: 38px;
+	font-weight: 700;
+}
+
+@utility type__h2 {
+	font-family: Poppins, System;
+	font-size: 24px;
+	line-height: 31px;
+	font-weight: 600;
+}
+
+@utility type__h3 {
+	font-family: Poppins, System;
+	font-size: 20px;
+	line-height: 26px;
+	font-weight: 600;
+}
+
+@utility type__body {
+	font-family: Poppins, System;
+	font-size: 16px;
+	line-height: 26px;
+}
+
+@utility type__body-medium {
+	font-family: Poppins, System;
+	font-size: 14px;
+	line-height: 22px;
+}
+
+@utility type__caption {
+	font-family: Poppins, System;
+	font-size: 11px;
+	line-height: 15px;
+}
+
+@utility card-shadow {
+	box-shadow: 0 1px 3px rgba(13, 19, 43, 0.06);
+}
+
+@utility screen-gutter {
+	padding-left: 16px;
+	padding-right: 16px;
+}
