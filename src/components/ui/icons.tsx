@@ -457,3 +457,234 @@ export function TabProfileIcon({ size = 22, color = "#8a92a6" }: IconProps) {
     </View>
   );
 }
+
+/**
+ * Top bar Navigation Back Chevron (<)
+ */
+export function ChevronLeftIcon({ size = 24, color = "#1c2136" }: IconProps) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.42,
+          height: size * 0.42,
+          borderLeftWidth: 2.8,
+          borderBottomWidth: 2.8,
+          borderColor: color,
+          transform: [{ rotate: "45deg" }],
+          marginLeft: size * 0.15,
+        }}
+      />
+    </View>
+  );
+}
+
+/**
+ * Bookmark Ribbon Icon (with orange/gold border and banner notch)
+ */
+export function BookmarkRibbonIcon({
+  size = 24,
+  color = "#ff8a00",
+  filled = false,
+}: IconProps & { filled?: boolean }) {
+  const scale = size / 24;
+
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          width: 18 * scale,
+          height: 22 * scale,
+          borderTopLeftRadius: 4 * scale,
+          borderTopRightRadius: 4 * scale,
+          borderBottomLeftRadius: 2 * scale,
+          borderBottomRightRadius: 2 * scale,
+          borderWidth: 2.2 * scale,
+          borderColor: color,
+          backgroundColor: filled ? color : "#ffffff",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          overflow: "hidden",
+        }}
+      >
+        {/* Bottom notch cutout */}
+        <View
+          style={{
+            width: 0,
+            height: 0,
+            borderLeftWidth: 7 * scale,
+            borderRightWidth: 7 * scale,
+            borderBottomWidth: 5.5 * scale,
+            borderLeftColor: "transparent",
+            borderRightColor: "transparent",
+            borderBottomColor: "#ffffff",
+            marginBottom: -1,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Lock Outline Icon (for locked / upcoming lessons)
+ */
+export function LockOutlineIcon({ size = 20, color = "#8a92a6" }: IconProps) {
+  const scale = size / 20;
+
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      {/* Shackle arch */}
+      <View
+        style={{
+          width: 10 * scale,
+          height: 8 * scale,
+          borderTopLeftRadius: 5 * scale,
+          borderTopRightRadius: 5 * scale,
+          borderWidth: 1.8 * scale,
+          borderColor: color,
+          borderBottomWidth: 0,
+          marginBottom: -1 * scale,
+        }}
+      />
+      {/* Padlock body */}
+      <View
+        style={{
+          width: 14 * scale,
+          height: 10.5 * scale,
+          borderRadius: 3 * scale,
+          borderWidth: 1.8 * scale,
+          borderColor: color,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#ffffff",
+        }}
+      >
+        {/* Keyhole dot */}
+        <View
+          style={{
+            width: 2.2 * scale,
+            height: 2.2 * scale,
+            borderRadius: 1.1 * scale,
+            backgroundColor: color,
+          }}
+        />
+        {/* Keyhole slot */}
+        <View
+          style={{
+            width: 1.4 * scale,
+            height: 2.5 * scale,
+            backgroundColor: color,
+            marginTop: 0.5 * scale,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Green Circular Completed Checkmark Badge
+ */
+export function CheckCircleBadge({ size = 24 }: { size?: number }) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: "#48bb78",
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: "#48bb78",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+        elevation: 2,
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.35,
+          height: size * 0.6,
+          borderBottomWidth: 2.4,
+          borderRightWidth: 2.4,
+          borderColor: "#ffffff",
+          transform: [{ rotate: "45deg" }],
+          marginBottom: size * 0.1,
+        }}
+      />
+    </View>
+  );
+}
+
+/**
+ * Top bar Navigation Forward Chevron (>)
+ */
+export function ChevronRightIcon({ size = 24, color = "#8a92a6" }: IconProps) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <View
+        style={{
+          width: size * 0.38,
+          height: size * 0.38,
+          borderTopWidth: 2.4,
+          borderRightWidth: 2.4,
+          borderColor: color,
+          transform: [{ rotate: "45deg" }],
+          marginRight: size * 0.1,
+        }}
+      />
+    </View>
+  );
+}
+
+/**
+ * Play Circle Badge (for ready to learn / unlocked lessons)
+ */
+export function PlayCircleBadge({ size = 28 }: { size?: number }) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: "#f4f3ff",
+        borderWidth: 1.5,
+        borderColor: "#c4b5fd",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <View
+        style={{
+          width: 0,
+          height: 0,
+          borderLeftWidth: size * 0.32,
+          borderTopWidth: size * 0.2,
+          borderBottomWidth: size * 0.2,
+          borderLeftColor: "#5e54eb",
+          borderTopColor: "transparent",
+          borderBottomColor: "transparent",
+          marginLeft: size * 0.08,
+        }}
+      />
+    </View>
+  );
+}
+
+

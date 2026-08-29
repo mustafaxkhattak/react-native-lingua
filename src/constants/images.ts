@@ -7,4 +7,7 @@ export const images = {
   palace: require("../../assets/images/palace.png"),
   streakFire: require("../../assets/images/streak-fire.png"),
   aiTeacherAvatar: require("../../assets/images/ai-teacher-avatar.jpg"),
+  mascotCafeBanner: require("../../assets/images/mascot-cafe-banner.png"),
+  cafeTableIcon: require("../../assets/images/cafe-table-icon.png"),
+  mascotGreetingsBanner: require("../../assets/images/mascot-greetings-banner.png"),
 };
