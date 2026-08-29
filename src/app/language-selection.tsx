@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 import { images } from "@/constants/images";
 import { languages } from "@/data/languages";
@@ -18,6 +19,7 @@ import { useLanguageStore } from "@/store/language-store";
 import type { LanguageId } from "@/types/learning";
 
 export default function LanguageSelection() {
+  const posthog = usePostHog();
   const [query, setQuery] = useState("");
   const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
   const setSelectedLanguage = useLanguageStore((state) => state.setSelectedLanguage);
@@ -132,6 +134,10 @@ export default function LanguageSelection() {
           disabled={!selected}
           onPress={() => {
             setSelectedLanguage(activeLanguage);
+            posthog.capture("language_selected", {
+              language_id: activeLanguage,
+              language_name: selected?.name ?? activeLanguage,
+            });
             router.replace("/");
           }}
           className="mt-6 h-[68px] flex-row items-center justify-center rounded-[22px] bg-brand-purple active:bg-brand-deep-purple disabled:opacity-50"

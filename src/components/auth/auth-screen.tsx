@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 import { VerificationModal } from "@/components/auth/verification-modal";
 import { images } from "@/constants/images";
@@ -22,6 +23,7 @@ const socialOptions = [
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function AuthScreen({ mode }: AuthScreenProps) {
+  const posthog = usePostHog();
   const { signIn, fetchStatus: signInFetchStatus } = useSignIn();
   const { signUp, fetchStatus: signUpFetchStatus } = useSignUp();
   const { startSSOFlow } = useSSO();
@@ -117,6 +119,11 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   }
 
   async function handleSocialPress(strategy: (typeof socialOptions)[number]["strategy"]) {
+    // Track that the user tapped a social auth option
+    posthog.capture("social_auth_started", {
+      strategy,
+      mode,
+    });
     try {
       const { createdSessionId, setActive } = await startSSOFlow({ strategy });
       if (createdSessionId && setActive) {
@@ -141,6 +148,17 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         showClerkError(finalizeError);
         return false;
       }
+
+      // Identify the new user using their Clerk user ID (not email)
+      const clerkUserId = signUp.createdUserId;
+      if (clerkUserId) {
+        posthog.identify(clerkUserId, {
+          $set_once: { first_sign_up_date: new Date().toISOString() },
+        });
+      }
+      posthog.capture("user_signed_up", {
+        auth_method: "email",
+      });
     } else {
       const { error } = await signIn.emailCode.verifyCode({ code });
       if (error) {
@@ -153,6 +171,12 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         showClerkError(finalizeError);
         return false;
       }
+
+      // The user is now identified via the Clerk session; the root layout
+      // will call posthog.identify() with the Clerk user ID once the session loads.
+      posthog.capture("user_signed_in", {
+        auth_method: "email",
+      });
     }
 
     setVerificationVisible(false);

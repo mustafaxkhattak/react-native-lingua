@@ -1,5 +1,6 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
+import { usePostHog } from "posthog-react-native";
 
 import { BookIcon, CheckmarkIcon, HeadphonesIcon, WordsIcon } from "@/components/ui/icons";
 import { getDailyPlan } from "@/data/plans";
@@ -8,6 +9,7 @@ import { useLearningStore } from "@/store/learning-store";
 import type { DailyPlanItem } from "@/types/learning";
 
 export function TodaysPlan() {
+  const posthog = usePostHog();
   const selectedLanguageId = useLanguageStore((state) => state.selectedLanguage) ?? "spanish";
   const completedPlanItemIds = useLearningStore((state) => state.completedPlanItemIds);
   const togglePlanItem = useLearningStore((state) => state.togglePlanItem);
@@ -47,7 +49,19 @@ export function TodaysPlan() {
           return (
             <Pressable
               key={item.id}
-              onPress={() => togglePlanItem(item.id, item.xp)}
+              onPress={() => {
+                const becomingCompleted = !isCompleted;
+                togglePlanItem(item.id, item.xp);
+                if (becomingCompleted) {
+                  posthog.capture("plan_item_completed", {
+                    item_id: item.id,
+                    item_title: item.title,
+                    item_type: item.icon,
+                    xp_earned: item.xp,
+                    language_id: selectedLanguageId,
+                  });
+                }
+              }}
               unstable_pressDelay={0}
               hitSlop={4}
               accessibilityRole="checkbox"

@@ -124,6 +124,10 @@ export interface Lesson {
   vocabulary: VocabularyItem[];
   phrases: Phrase[];
   aiTeacherPrompt: AITeacherPrompt;
+  imageAssetKey?: string;
+  imageUrl?: string;
+  sublabel?: string;
+  defaultStatus?: "completed" | "in-progress" | "locked" | "available";
 }
 
 export type PlanItemType = "lesson" | "conversation" | "vocabulary";

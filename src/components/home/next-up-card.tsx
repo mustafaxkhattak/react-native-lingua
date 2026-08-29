@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
+import { usePostHog } from "posthog-react-native";
 
 import { VideoCameraIcon } from "@/components/ui/icons";
 import { images } from "@/constants/images";
@@ -9,10 +10,16 @@ import { useLanguageStore } from "@/store/language-store";
 import { Image } from "expo-image";
 
 export function NextUpCard() {
+  const posthog = usePostHog();
   const selectedLanguageId = useLanguageStore((state) => state.selectedLanguage) ?? "spanish";
   const activity = getNextUpActivity(selectedLanguageId);
 
   const handleStartCall = () => {
+    posthog.capture("ai_teacher_session_started", {
+      language_id: selectedLanguageId,
+      activity_title: activity.title,
+      entry_point: "home_next_up_card",
+    });
     // Navigate to AI Teacher tab
     router.push("/(tabs)/ai-teacher");
   };
