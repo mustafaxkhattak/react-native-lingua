@@ -1,9 +1,15 @@
-import { Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import React from "react";
+
+import { AudioLessonView } from "@/components/audio-lesson/audio-lesson-view";
 
 export default function AiTeacherScreen() {
-  return (
-    <View className="flex-1 items-center justify-center bg-[#f7f7fa]">
-      <Text className="text-2xl font-semibold text-slate-800">AI Teacher</Text>
-    </View>
-  );
+  const { lessonId } = useLocalSearchParams<{ lessonId?: string }>();
+
+  const handleBack = () => {
+    // Navigate back to learn tab
+    router.navigate("/(tabs)/learn");
+  };
+
+  return <AudioLessonView lessonId={lessonId} onBack={handleBack} />;
 }
