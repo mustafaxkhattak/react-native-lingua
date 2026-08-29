@@ -125,3 +125,24 @@ export interface Lesson {
   phrases: Phrase[];
   aiTeacherPrompt: AITeacherPrompt;
 }
+
+export type PlanItemType = "lesson" | "conversation" | "vocabulary";
+
+export interface DailyPlanItem {
+  id: string;
+  type: PlanItemType;
+  title: string;
+  subtitle: string;
+  icon: "book" | "headphones" | "words";
+  badgeBgColor: string;
+  xp: number;
+  languageId: LanguageId;
+}
+
+export interface NextUpActivity {
+  id: string;
+  tag: string;
+  title: string;
+  subtitle: string;
+  actionType: "video-call" | "audio-call" | "lesson";
+}
