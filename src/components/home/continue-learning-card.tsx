@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { usePostHog } from "posthog-react-native";
 
 import { images } from "@/constants/images";
 import { languages } from "@/data/languages";
@@ -9,6 +10,7 @@ import { useLearningStore } from "@/store/learning-store";
 import { Image } from "expo-image";
 
 export function ContinueLearningCard() {
+  const posthog = usePostHog();
   const selectedLanguageId = useLanguageStore((state) => state.selectedLanguage) ?? "spanish";
   const currentLevel = useLearningStore((state) => state.currentLevel);
   const currentUnitNumber = useLearningStore((state) => state.currentUnitNumber);
@@ -17,6 +19,12 @@ export function ContinueLearningCard() {
   const languageName = language?.name ?? "Spanish";
 
   const handleContinue = () => {
+    posthog.capture("continue_learning_pressed", {
+      language_id: selectedLanguageId,
+      language_name: languageName,
+      current_level: currentLevel,
+      current_unit: currentUnitNumber,
+    });
     // Navigate to learn tab or active lesson
     router.push("/(tabs)/learn");
   };

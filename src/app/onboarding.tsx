@@ -3,10 +3,12 @@ import { Image } from "expo-image";
 import { Redirect, router } from "expo-router";
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 import { images } from "@/constants/images";
 
 export default function Onboarding() {
+  const posthog = usePostHog();
   const { isLoaded, isSignedIn } = useAuth();
   const { width, height } = useWindowDimensions();
 
@@ -84,7 +86,10 @@ export default function Onboarding() {
         </View>
 
         <Pressable
-          onPress={() => router.replace("/sign-up")}
+          onPress={() => {
+            posthog.capture("onboarding_get_started_pressed");
+            router.replace("/sign-up");
+          }}
           className="absolute bottom-6 left-14 right-14 h-16 flex-row items-center justify-center rounded-[20px] bg-brand-purple active:bg-brand-deep-purple"
           style={styles.button}
         >
