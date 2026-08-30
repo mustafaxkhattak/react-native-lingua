@@ -10,7 +10,13 @@ interface AiTeacherStageProps {
   secondaryPhrase?: string;
   isCameraActive?: boolean;
   isPlayingAudio?: boolean;
+  learnerName?: string;
+  learnerAvatarUrl?: string;
+  isMuted?: boolean;
+  isConnecting?: boolean;
+  errorMessage?: string | null;
   onPlayAudio?: () => void;
+  onRetry?: () => void;
 }
 
 export function AiTeacherStage({
@@ -18,7 +24,13 @@ export function AiTeacherStage({
   secondaryPhrase = "That was great! 👏",
   isCameraActive = true,
   isPlayingAudio = false,
+  learnerName = "You",
+  learnerAvatarUrl,
+  isMuted = false,
+  isConnecting = false,
+  errorMessage,
   onPlayAudio,
+  onRetry,
 }: AiTeacherStageProps) {
   const [isPressingSpeaker, setIsPressingSpeaker] = useState(false);
 
@@ -32,17 +44,42 @@ export function AiTeacherStage({
         accessibilityLabel="AI Teacher Mascot in Cozy Room"
       />
 
-      {/* Top Right: Learner Video Preview (Picture in Picture) */}
+      {/* Top Right: Learner Video / Audio Preview (Picture in Picture) */}
       {isCameraActive && (
         <View style={styles.pipContainer}>
           <Image
-            source={images.learnerPipAvatar}
+            source={learnerAvatarUrl ? { uri: learnerAvatarUrl } : images.learnerPipAvatar}
             style={styles.pipImage}
             contentFit="cover"
-            accessibilityLabel="Learner video camera preview"
+            accessibilityLabel={`${learnerName} camera preview`}
           />
+          {/* User Badge / Mute Badge */}
+          <View style={styles.pipBadge}>
+            <Text style={styles.pipBadgeText} numberOfLines={1}>
+              {isMuted ? "🔇 Muted" : learnerName}
+            </Text>
+          </View>
         </View>
       )}
+
+      {/* Error / Connection Overlay */}
+      {errorMessage ? (
+        <View style={styles.errorOverlay}>
+          <Text style={styles.errorTitle}>Connection Issue</Text>
+          <Text style={styles.errorMessage}>{errorMessage}</Text>
+          {onRetry && (
+            <Pressable
+              onPress={onRetry}
+              style={styles.retryButton}
+              className="active:opacity-80"
+              accessibilityRole="button"
+              accessibilityLabel="Retry Stream connection"
+            >
+              <Text style={styles.retryButtonText}>Retry Connection</Text>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
 
       {/* Speech Bubble (AI Teacher Response) */}
       <View style={styles.bubbleWrapper}>
@@ -50,10 +87,10 @@ export function AiTeacherStage({
           {/* Text Content */}
           <View className="flex-1 pr-3 justify-center">
             <Text className="font-sans text-[16px] font-bold text-[#1c2136] tracking-tight">
-              {primaryPhrase}
+              {isConnecting ? "Connecting to audio..." : primaryPhrase}
             </Text>
             <Text className="font-sans text-[14px] font-medium text-[#4b5563] mt-0.5">
-              {secondaryPhrase}
+              {isConnecting ? "Setting up your lesson session 🎙️" : secondaryPhrase}
             </Text>
           </View>
 
@@ -99,8 +136,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 14,
     right: 14,
-    width: 82,
-    height: 108,
+    width: 86,
+    height: 112,
     borderRadius: 16,
     borderWidth: 2.5,
     borderColor: "#ffffff",
@@ -115,6 +152,63 @@ const styles = StyleSheet.create({
   pipImage: {
     width: "100%",
     height: "100%",
+  },
+  pipBadge: {
+    position: "absolute",
+    bottom: 4,
+    left: 4,
+    right: 4,
+    backgroundColor: "rgba(0, 0, 0, 0.65)",
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  pipBadgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "600",
+    fontFamily: "Poppins",
+  },
+  errorOverlay: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    right: 106,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    padding: 12,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  errorTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#ef4444",
+    fontFamily: "Poppins",
+  },
+  errorMessage: {
+    fontSize: 11,
+    color: "#475569",
+    marginTop: 2,
+    fontFamily: "Poppins",
+  },
+  retryButton: {
+    marginTop: 6,
+    backgroundColor: "#5e54eb",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  retryButtonText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "600",
+    fontFamily: "Poppins",
   },
   bubbleWrapper: {
     position: "absolute",

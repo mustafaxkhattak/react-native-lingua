@@ -10,6 +10,8 @@ import { useLanguageStore } from "@/store/language-store";
 import { useLearningStore } from "@/store/learning-store";
 import { Image } from "expo-image";
 
+import { router } from "expo-router";
+
 export function HomeHeader() {
   const { user } = useUser();
   const selectedLanguage = useLanguageStore((state) => state.selectedLanguage) ?? "spanish";
@@ -23,9 +25,14 @@ export function HomeHeader() {
     <View className="flex-row items-center justify-between py-2">
       {/* Left: Flag and Greeting */}
       <View className="flex-row items-center gap-2.5">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 shadow-sm">
+        <Pressable
+          onPress={() => router.push("/language-selection")}
+          accessibilityRole="button"
+          accessibilityLabel="Change language"
+          className="h-10 w-10 items-center justify-center rounded-full bg-slate-100 active:bg-slate-200 shadow-sm"
+        >
           <Text className="text-[24px] leading-[26px]">{flagEmoji}</Text>
-        </View>
+        </Pressable>
         <Text className="font-sans text-[20px] font-bold text-[#1c2136]">
           {greetingWord}, {firstName}! 👋
         </Text>

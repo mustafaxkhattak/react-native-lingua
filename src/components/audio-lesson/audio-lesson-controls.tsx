@@ -13,6 +13,7 @@ interface AudioLessonControlsProps {
   isCameraOn?: boolean;
   isMicOn?: boolean;
   isSubtitlesActive?: boolean;
+  isLoading?: boolean;
   onToggleCamera?: () => void;
   onToggleMic?: () => void;
   onToggleSubtitles?: () => void;
@@ -23,6 +24,7 @@ export function AudioLessonControls({
   isCameraOn = true,
   isMicOn = true,
   isSubtitlesActive = false,
+  isLoading = false,
   onToggleCamera,
   onToggleMic,
   onToggleSubtitles,
@@ -34,10 +36,15 @@ export function AudioLessonControls({
       <View style={styles.buttonWrapper}>
         <Pressable
           onPress={onToggleCamera}
+          disabled={isLoading}
           unstable_pressDelay={0}
           accessibilityRole="button"
           accessibilityLabel={isCameraOn ? "Turn camera off" : "Turn camera on"}
-          style={[styles.circularButton, !isCameraOn && styles.buttonInactive]}
+          style={[
+            styles.circularButton,
+            !isCameraOn && styles.buttonInactive,
+            isLoading && styles.buttonDisabled,
+          ]}
           className="active:opacity-75"
         >
           <VideoCameraIcon size={22} color={isCameraOn ? "#1c2136" : "#8a92a6"} />
@@ -49,10 +56,15 @@ export function AudioLessonControls({
       <View style={styles.buttonWrapper}>
         <Pressable
           onPress={onToggleMic}
+          disabled={isLoading}
           unstable_pressDelay={0}
           accessibilityRole="button"
           accessibilityLabel={isMicOn ? "Mute microphone" : "Unmute microphone"}
-          style={[styles.circularButton, !isMicOn && styles.buttonInactive]}
+          style={[
+            styles.circularButton,
+            !isMicOn && styles.buttonInactive,
+            isLoading && styles.buttonDisabled,
+          ]}
           className="active:opacity-75"
         >
           {isMicOn ? (
@@ -130,6 +142,9 @@ const styles = StyleSheet.create({
   buttonInactive: {
     backgroundColor: "#f8fafc",
     borderColor: "#e2e8f0",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   subtitlesButtonActive: {
     backgroundColor: "#f5f3ff",

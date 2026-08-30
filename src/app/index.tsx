@@ -1,12 +1,12 @@
 import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 
-import { useLanguageStore } from "@/store/language-store";
+import { useLanguageStore, useLanguageStoreHydrated } from "@/store/language-store";
 
 export default function Index() {
   const { isLoaded, isSignedIn } = useAuth();
   const selectedLanguage = useLanguageStore((state) => state.selectedLanguage);
-  const hasHydrated = useLanguageStore.persist.hasHydrated();
+  const hasHydrated = useLanguageStoreHydrated();
 
   if (!isLoaded || !hasHydrated) {
     return null;

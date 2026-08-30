@@ -1,6 +1,8 @@
+import { useUser } from "@clerk/expo";
+import type { Call, StreamVideoClient } from "@stream-io/video-react-native-sdk";
 import { router } from "expo-router";
 import { usePostHog } from "posthog-react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -10,6 +12,14 @@ import { AudioLessonControls } from "@/components/audio-lesson/audio-lesson-cont
 import { LessonFeedbackCard } from "@/components/audio-lesson/lesson-feedback-card";
 import { SubtitlesModal } from "@/components/audio-lesson/subtitles-modal";
 import { lessons } from "@/data/lessons";
+import {
+  fetchStreamSession,
+  fetchStreamUserToken,
+  getOrCreateStreamClient,
+  getStreamVideoSDK,
+  startAgentSession,
+  stopAgentSession,
+} from "@/lib/stream";
 import { useLanguageStore } from "@/store/language-store";
 import { useLearningStore } from "@/store/learning-store";
 import type { Phrase } from "@/types/learning";
@@ -19,12 +29,28 @@ interface AudioLessonViewProps {
   onBack?: () => void;
 }
 
+type CallConnectionStatus =
+  | "connecting"
+  | "connected"
+  | "muted"
+  | "reconnecting"
+  | "error"
+  | "ended";
+
+type AgentConnectionStatus = "idle" | "connecting" | "connected" | "failed";
+
 export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
   const posthog = usePostHog();
+  const { user: clerkUser } = useUser();
   const selectedLanguage = useLanguageStore((state) => state.selectedLanguage) ?? "spanish";
   const activeLessonIdFromStore = useLearningStore((state) => state.activeLessonId);
   const toggleLessonCompleted = useLearningStore((state) => state.toggleLessonCompleted);
   const completedLessonIds = useLearningStore((state) => state.completedLessonIds);
+
+  // User details from Clerk
+  const learnerId = clerkUser?.id || "guest_learner";
+  const learnerName = clerkUser?.fullName || clerkUser?.firstName || "Learner";
+  const learnerAvatarUrl = clerkUser?.imageUrl;
 
   // Resolve target lesson
   const resolvedLesson = useMemo(() => {
@@ -38,14 +64,36 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
     return langLessons[2] || langLessons[0] || lessons[0];
   }, [lessonId, activeLessonIdFromStore, selectedLanguage]);
 
-  // Call timer simulation
-  const [callSeconds, setCallSeconds] = useState(12);
+  // Stream Client & Call State
+  const [streamClient, setStreamClient] = useState<StreamVideoClient | null>(null);
+  const [callInstance, setCallInstance] = useState<Call | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<CallConnectionStatus>("connecting");
+  const [agentStatus, setAgentStatus] = useState<AgentConnectionStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Reference for session tracking & teardown
+  const agentSessionIdRef = useRef<string | null>(null);
+  const callIdRef = useRef<string | null>(null);
+  const callRef = useRef<Call | null>(null);
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCallSeconds((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    callRef.current = callInstance;
+  }, [callInstance]);
+
+  // Call timer: increments when connected
+  const [callSeconds, setCallSeconds] = useState(0);
+
+  useEffect(() => {
+    let timer: any;
+    if (connectionStatus === "connected" || connectionStatus === "muted") {
+      timer = setInterval(() => {
+        setCallSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [connectionStatus]);
 
   // UI Interactive States
   const [isCameraActive, setIsCameraActive] = useState(true);
@@ -55,8 +103,12 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
   const [activePhraseIndex, setActivePhraseIndex] = useState(0);
 
   // Speech bubble text
-  const [speechPrimary, setSpeechPrimary] = useState("¡Muy bien!");
-  const [speechSecondary, setSpeechSecondary] = useState("That was great! 👏");
+  const [speechPrimary, setSpeechPrimary] = useState(
+    resolvedLesson.aiTeacherPrompt?.opening || "¡Hola! Bienvenido."
+  );
+  const [speechSecondary, setSpeechSecondary] = useState(
+    `Lesson: ${resolvedLesson.title}`
+  );
 
   // Feedback scores
   const [scores, setScores] = useState({
@@ -71,14 +123,152 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
       lesson_id: resolvedLesson.id,
       lesson_title: resolvedLesson.title,
       language_id: resolvedLesson.languageId,
+      learner_id: learnerId,
     });
-  }, [resolvedLesson, posthog]);
+  }, [resolvedLesson, learnerId, posthog]);
 
-  // Handle speaker audio playback simulation
+  // Helper to cleanly stop the Vision Agent session
+  const stopAgent = useCallback(async () => {
+    const currentCallId = callIdRef.current;
+    const currentSessionId = agentSessionIdRef.current;
+    if (currentCallId && currentSessionId) {
+      agentSessionIdRef.current = null;
+      await stopAgentSession(currentCallId, currentSessionId).catch((err) => {
+        console.warn("Agent session stop notice:", err);
+      });
+    }
+  }, []);
+
+  // Initialize and join Stream Audio Call, then connect Vision Agent
+  const startStreamAudioCall = useCallback(async () => {
+    setConnectionStatus("connecting");
+    setAgentStatus("connecting");
+    setErrorMessage(null);
+
+    try {
+      // 1. Fetch token & call session from Expo API route with full lesson metadata
+      const session = await fetchStreamSession({
+        userId: learnerId,
+        userName: learnerName,
+        userImage: learnerAvatarUrl,
+        lessonId: resolvedLesson.id,
+        languageId: selectedLanguage,
+        lessonTitle: resolvedLesson.title,
+        lessonGoal: resolvedLesson.goalIds?.join(", "),
+        vocabulary: resolvedLesson.vocabulary?.map((v) => ({
+          id: v.id,
+          word: v.word,
+          translation: v.translation,
+          pronunciation: v.pronunciation,
+          example: v.example,
+        })),
+        phrases: resolvedLesson.phrases.map((p) => ({
+          text: p.text,
+          translation: p.translation,
+          pronunciation: p.pronunciation,
+        })),
+        aiTeacherPrompt: resolvedLesson.aiTeacherPrompt,
+      });
+
+      callIdRef.current = session.callId;
+
+      // 2. Check if native Stream SDK is supported in this runtime
+      const sdk = getStreamVideoSDK();
+      if (sdk) {
+        // Initialize StreamVideoClient singleton
+        const client = getOrCreateStreamClient(
+          session.apiKey,
+          {
+            id: learnerId,
+            name: learnerName,
+            image: learnerAvatarUrl,
+          },
+          () => fetchStreamUserToken(learnerId)
+        );
+
+        if (client) {
+          setStreamClient(client);
+
+          // Create audio_room call instance
+          const call = client.call(session.callType || "audio_room", session.callId, {
+            reuseInstance: true,
+          });
+          setCallInstance(call);
+          callRef.current = call;
+
+          // Join call and configure audio-only settings
+          await call.join({ create: true });
+
+          try {
+            await call.camera.disable();
+            await call.microphone.enable();
+          } catch (deviceErr) {
+            console.warn("Audio/camera setup notice:", deviceErr);
+          }
+        }
+      }
+
+      setConnectionStatus("connected");
+      setIsMicActive(true);
+
+      // 3. Connect Vision Agent to the call session via Expo API route proxy
+      try {
+        const agentRes = await startAgentSession(
+          session.callId,
+          session.callType || "audio_room"
+        );
+        if (agentRes?.sessionId) {
+          agentSessionIdRef.current = agentRes.sessionId;
+          setAgentStatus("connected");
+        } else {
+          setAgentStatus("connected");
+        }
+      } catch (agentErr: any) {
+        console.warn("Vision agent connection notice:", agentErr?.message || agentErr);
+        setAgentStatus("failed");
+        setErrorMessage("AI Teacher server offline. Ensure 'uv run agent.py serve' is running on port 8000.");
+      }
+    } catch (err: any) {
+      console.error("Stream call connection notice:", err);
+      // Keep audio lesson interactive even if local network restricts SFU
+      setConnectionStatus("connected");
+      setAgentStatus("failed");
+      setIsMicActive(true);
+    }
+  }, [
+    learnerId,
+    learnerName,
+    learnerAvatarUrl,
+    resolvedLesson,
+    selectedLanguage,
+  ]);
+
+  // Start call on mount and clean up both call and agent session on unmount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      startStreamAudioCall();
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      const currentCall = callRef.current;
+      if (currentCall) {
+        try {
+          currentCall.leave().catch((err: any) => {
+            console.warn("Call cleanup notice:", err);
+          });
+        } catch {
+          // ignore
+        }
+      }
+      stopAgent();
+    };
+  }, [startStreamAudioCall, stopAgent]);
+
+  // Handle speaker audio playback
   const handlePlayAudio = () => {
     setIsPlayingAudio(true);
 
-    // Pick current or next phrase from the lesson
     const currentPhrase = resolvedLesson.phrases[activePhraseIndex];
     if (currentPhrase) {
       setSpeechPrimary(currentPhrase.text);
@@ -100,20 +290,33 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
     setTimeout(() => setIsPlayingAudio(false), 1000);
   };
 
-  // Handle mic toggle (practice speaking simulation)
-  const handleToggleMic = () => {
-    const nextState = !isMicActive;
-    setIsMicActive(nextState);
+  // Handle mic toggle (mute/unmute Stream call)
+  const handleToggleMic = async () => {
+    const nextMicState = !isMicActive;
+    setIsMicActive(nextMicState);
 
-    if (nextState) {
-      // User turned on mic -> simulate listening and recognition
+    if (callInstance) {
+      try {
+        await callInstance.microphone.toggle();
+      } catch (err) {
+        console.warn("Microphone toggle notice:", err);
+      }
+    }
+
+    if (!nextMicState) {
+      setSpeechPrimary("Microphone Muted");
+      setSpeechSecondary("Unmute anytime to continue speaking 🎙️");
+    } else {
       setSpeechPrimary("Listening...");
       setSpeechSecondary("Speak clearly into the microphone 🎙️");
 
       setTimeout(() => {
-        const phrase = resolvedLesson.phrases[activePhraseIndex] || resolvedLesson.phrases[0];
+        const phrase =
+          resolvedLesson.phrases[activePhraseIndex] || resolvedLesson.phrases[0];
         setSpeechPrimary("¡Muy bien!");
-        setSpeechSecondary(phrase ? `"${phrase.text}" sounded great! 👏` : "That was great! 👏");
+        setSpeechSecondary(
+          phrase ? `"${phrase.text}" sounded great! 👏` : "That was great! 👏"
+        );
         setScores({
           speaking: "Excellent",
           pronunciation: "Great",
@@ -124,11 +327,27 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
   };
 
   // Handle ending call & completing lesson
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
+    setConnectionStatus("ended");
+    setAgentStatus("idle");
+
+    if (callInstance) {
+      try {
+        await callInstance.leave().catch((err: any) => {
+          console.warn("Leave call notice:", err);
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    await stopAgent();
+
     posthog.capture("ai_teacher_lesson_completed", {
       lesson_id: resolvedLesson.id,
       duration_seconds: callSeconds,
       xp_awarded: resolvedLesson.xp || 20,
+      learner_id: learnerId,
     });
 
     // Mark completed if not yet
@@ -143,11 +362,31 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
     }
   };
 
-  return (
+  // Header status text & color state
+  const headerStatusText = useMemo(() => {
+    if (agentStatus === "connecting" || connectionStatus === "connecting") return "Connecting...";
+    if (agentStatus === "failed") return "Teacher Offline";
+    if (connectionStatus === "error") return "Offline";
+    if (connectionStatus === "reconnecting") return "Reconnecting...";
+    if (!isMicActive) return "Muted";
+    return "Online";
+  }, [agentStatus, connectionStatus, isMicActive]);
+
+  const headerStatusState = useMemo(() => {
+    if (agentStatus === "connecting" || connectionStatus === "connecting") return "connecting";
+    if (agentStatus === "failed") return "failed";
+    if (connectionStatus === "error") return "error";
+    if (!isMicActive) return "muted";
+    return "online";
+  }, [agentStatus, connectionStatus, isMicActive]);
+
+  // Main UI content
+  const content = (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Top Header */}
       <AiTeacherHeader
-        statusText="Online"
+        statusText={headerStatusText}
+        statusState={headerStatusState}
         counterValue={callSeconds}
         onBack={onBack}
         onCameraToggle={() => setIsCameraActive((prev) => !prev)}
@@ -165,7 +404,13 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
           secondaryPhrase={speechSecondary}
           isCameraActive={isCameraActive}
           isPlayingAudio={isPlayingAudio}
+          learnerName={learnerName}
+          learnerAvatarUrl={learnerAvatarUrl}
+          isMuted={!isMicActive}
+          isConnecting={connectionStatus === "connecting" || agentStatus === "connecting"}
+          errorMessage={errorMessage}
           onPlayAudio={handlePlayAudio}
+          onRetry={startStreamAudioCall}
         />
 
         {/* Audio Lesson Control Buttons (Camera, Mic, Subtitles, End Call) */}
@@ -173,6 +418,7 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
           isCameraOn={isCameraActive}
           isMicOn={isMicActive}
           isSubtitlesActive={isSubtitlesOpen}
+          isLoading={connectionStatus === "connecting" || agentStatus === "connecting"}
           onToggleCamera={() => setIsCameraActive((prev) => !prev)}
           onToggleMic={handleToggleMic}
           onToggleSubtitles={() => setIsSubtitlesOpen((prev) => !prev)}
@@ -200,7 +446,21 @@ export function AudioLessonView({ lessonId, onBack }: AudioLessonViewProps) {
       />
     </SafeAreaView>
   );
+
+  // If running in a native build with StreamVideo SDK active, wrap in providers
+  const sdk = getStreamVideoSDK();
+  if (sdk && streamClient && callInstance) {
+    const { StreamVideo, StreamCall } = sdk;
+    return (
+      <StreamVideo client={streamClient}>
+        <StreamCall call={callInstance}>{content}</StreamCall>
+      </StreamVideo>
+    );
+  }
+
+  return content;
 }
+
 
 const styles = StyleSheet.create({
   safeArea: {

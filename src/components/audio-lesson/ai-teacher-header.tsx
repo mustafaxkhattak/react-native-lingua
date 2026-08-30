@@ -11,6 +11,7 @@ import {
 interface AiTeacherHeaderProps {
   onBack?: () => void;
   statusText?: string;
+  statusState?: "idle" | "online" | "connecting" | "muted" | "error" | "offline" | "failed";
   counterValue?: string | number;
   onCameraToggle?: () => void;
   onProfilePress?: () => void;
@@ -19,6 +20,7 @@ interface AiTeacherHeaderProps {
 export function AiTeacherHeader({
   onBack,
   statusText = "Online",
+  statusState = "online",
   counterValue = "12",
   onCameraToggle,
   onProfilePress,
@@ -28,6 +30,25 @@ export function AiTeacherHeader({
       onBack();
     } else {
       router.back();
+    }
+  };
+
+  const getStatusDotColor = () => {
+    switch (statusState) {
+      case "online":
+        return "#22c55e"; // green
+      case "connecting":
+        return "#f59e0b"; // amber
+      case "muted":
+        return "#ef4444"; // red
+      case "failed":
+      case "error":
+        return "#ef4444"; // red
+      case "idle":
+      case "offline":
+        return "#94a3b8"; // gray
+      default:
+        return "#22c55e";
     }
   };
 
@@ -50,7 +71,7 @@ export function AiTeacherHeader({
             AI Teacher
           </Text>
           <View className="flex-row items-center gap-1.5 mt-0.5">
-            <View style={styles.onlineDot} />
+            <View style={[styles.onlineDot, { backgroundColor: getStatusDotColor() }]} />
             <Text className="font-sans text-[12px] font-medium text-[#718096]">
               {statusText}
             </Text>

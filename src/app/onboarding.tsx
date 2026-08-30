@@ -19,6 +19,7 @@ export default function Onboarding() {
   if (isSignedIn) {
     return <Redirect href="/" />;
   }
+
   const artworkSize =
     height < 650
       ? Math.max(160, Math.min(240, height - 350))
@@ -27,7 +28,7 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View className="flex-1 px-10" style={styles.screenContent}>
-        <View className="items-center pt-12">
+        <View className="items-center pt-10">
           <View className="flex-row items-center gap-3">
             <Image
               source={images.mascotLogo}
@@ -41,7 +42,7 @@ export default function Onboarding() {
           </View>
         </View>
 
-        <View className="pt-7">
+        <View className="pt-6">
           <Text className="font-sans text-[34px] leading-[41px] text-text-primary" style={styles.boldText}>
             Your AI language
           </Text>
@@ -85,19 +86,37 @@ export default function Onboarding() {
           />
         </View>
 
-        <Pressable
-          onPress={() => {
-            posthog.capture("onboarding_get_started_pressed");
-            router.replace("/sign-up");
-          }}
-          className="absolute bottom-6 left-14 right-14 h-16 flex-row items-center justify-center rounded-[20px] bg-brand-purple active:bg-brand-deep-purple"
-          style={styles.button}
-        >
-          <Text className="font-sans text-[20px] font-semibold text-white">
-            Get Started
-          </Text>
-          <View style={styles.arrow} />
-        </Pressable>
+        {/* Action Buttons Section */}
+        <View className="absolute bottom-5 left-10 right-10 items-center">
+          <Pressable
+            onPress={() => {
+              posthog.capture("onboarding_get_started_pressed");
+              router.push("/sign-up");
+            }}
+            className="h-16 w-full flex-row items-center justify-center rounded-[20px] bg-brand-purple active:bg-brand-deep-purple"
+            style={styles.primaryButton}
+          >
+            <Text className="font-sans text-[20px] font-semibold text-white">
+              Get Started
+            </Text>
+            <View style={styles.arrow} />
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              posthog.capture("onboarding_sign_in_pressed");
+              router.push("/sign-in");
+            }}
+            className="mt-3 py-1.5"
+            accessibilityRole="button"
+            accessibilityLabel="Log in to existing account"
+          >
+            <Text className="font-sans text-[15px] font-medium text-[#5f6b86]">
+              I already have an account ·{" "}
+              <Text className="font-semibold text-brand-purple">Log in</Text>
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -116,10 +135,14 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Bold",
   },
   screenContent: {
-    paddingBottom: 88,
+    paddingBottom: 110,
   },
-  button: {
-    bottom: 24,
+  primaryButton: {
+    shadowColor: "#6c4ef5",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 4,
   },
   arrow: {
     marginLeft: 12,
