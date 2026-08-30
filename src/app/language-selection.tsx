@@ -53,7 +53,13 @@ export default function LanguageSelection() {
         <View className="mb-2 h-11 flex-row items-center">
           <Pressable
             accessibilityLabel="Go back"
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/(tabs)/home");
+              }
+            }}
             className="h-11 w-11 items-center justify-center"
           >
             <Text className="mt-[-1px] font-sans text-[28px] leading-[28px] text-text-primary">
@@ -138,7 +144,7 @@ export default function LanguageSelection() {
               language_id: activeLanguage,
               language_name: selected?.name ?? activeLanguage,
             });
-            router.replace("/");
+            router.replace("/(tabs)/home");
           }}
           className="mt-6 h-[68px] flex-row items-center justify-center rounded-[22px] bg-brand-purple active:bg-brand-deep-purple disabled:opacity-50"
           accessibilityRole="button"

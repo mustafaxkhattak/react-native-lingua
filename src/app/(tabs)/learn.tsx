@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -71,9 +72,13 @@ export default function LearnScreen() {
     return images.mascotCafeBanner;
   }, [currentActiveLesson]);
 
-  // Handle lesson selection (no locking restriction)
+  // Handle lesson selection (navigate to AI teacher audio lesson)
   const handleSelectLesson = (lesson: Lesson) => {
     setActiveLessonId(lesson.id);
+    router.push({
+      pathname: "/(tabs)/ai-teacher",
+      params: { lessonId: lesson.id },
+    });
   };
 
   return (

@@ -10,4 +10,6 @@ export const images = {
   mascotCafeBanner: require("../../assets/images/mascot-cafe-banner.png"),
   cafeTableIcon: require("../../assets/images/cafe-table-icon.png"),
   mascotGreetingsBanner: require("../../assets/images/mascot-greetings-banner.png"),
+  aiTeacherFoxScene: require("../../assets/images/ai-teacher-fox-scene.jpg"),
+  learnerPipAvatar: require("../../assets/images/learner-pip-avatar.jpg"),
 };

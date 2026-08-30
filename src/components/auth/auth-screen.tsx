@@ -197,9 +197,21 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         showsVerticalScrollIndicator={false}
       >
 
-        <Pressable onPress={() => router.replace("/onboarding")} className={`${isCompact ? "h-8" : "h-10"} w-10 items-start justify-center`}>
+        <Pressable
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/onboarding");
+            }
+          }}
+          className={`${isCompact ? "h-8" : "h-10"} w-10 items-start justify-center`}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <View style={styles.backChevron} />
         </Pressable>
+
 
         <Text className={`${isCompact ? "mt-3 text-[28px] leading-[35px]" : "mt-8 text-[34px] leading-[42px]"} font-sans text-text-primary`} style={styles.boldText}>
           {isSignUp ? "Create your account" : "Welcome back"}

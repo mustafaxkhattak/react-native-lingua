@@ -1,0 +1,12 @@
+[project]
+name = "vision-agent"
+version = "0.1.0"
+description = "AI Language Teacher Voice Service powered by Vision Agents, Stream Edge, and OpenAI Realtime"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "vision-agents>=0.1.0",
+    "vision-agents-plugins-getstream",
+    "vision-agents-plugins-openai",
+    "python-dotenv>=1.0.0",
+]

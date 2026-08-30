@@ -687,4 +687,315 @@ export function PlayCircleBadge({ size = 28 }: { size?: number }) {
   );
 }
 
+/**
+ * Microphone Icon for Audio Controls
+ */
+export function MicControlIcon({ size = 24, color = "#1c2136" }: IconProps) {
+  const scale = size / 24;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      {/* Mic Capsule */}
+      <View
+        style={{
+          width: 9 * scale,
+          height: 14 * scale,
+          borderRadius: 4.5 * scale,
+          backgroundColor: color,
+          marginBottom: 1 * scale,
+        }}
+      />
+      {/* Mic Cradle / Arc */}
+      <View
+        style={{
+          position: "absolute",
+          top: 4.5 * scale,
+          width: 15 * scale,
+          height: 11 * scale,
+          borderBottomLeftRadius: 7.5 * scale,
+          borderBottomRightRadius: 7.5 * scale,
+          borderWidth: 2 * scale,
+          borderTopWidth: 0,
+          borderColor: color,
+        }}
+      />
+      {/* Mic Stem */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 2 * scale,
+          width: 2 * scale,
+          height: 4 * scale,
+          backgroundColor: color,
+        }}
+      />
+      {/* Mic Base */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 1.5 * scale,
+          width: 9 * scale,
+          height: 2 * scale,
+          borderRadius: 1 * scale,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
+/**
+ * Microphone Off / Muted Icon
+ */
+export function MicOffControlIcon({ size = 24, color = "#ef4444" }: IconProps) {
+  const scale = size / 24;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <MicControlIcon size={size} color={color} />
+      {/* Red diagonal slash */}
+      <View
+        style={{
+          position: "absolute",
+          width: 2.2 * scale,
+          height: 22 * scale,
+          backgroundColor: color,
+          transform: [{ rotate: "-45deg" }],
+          borderRadius: 1 * scale,
+        }}
+      />
+    </View>
+  );
+}
+
+/**
+ * Subtitles / Translation Icon (文A / Subtitles)
+ */
+export function SubtitlesControlIcon({ size = 24, color = "#1c2136" }: IconProps) {
+  const scale = size / 24;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      {/* Outer subtle frame */}
+      <View
+        style={{
+          width: 22 * scale,
+          height: 20 * scale,
+          borderRadius: 4 * scale,
+          borderWidth: 1.8 * scale,
+          borderColor: color,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {/* Horizontal top line of '文' */}
+        <View
+          style={{
+            width: 14 * scale,
+            height: 1.6 * scale,
+            backgroundColor: color,
+            borderRadius: 0.8 * scale,
+            marginBottom: 2 * scale,
+          }}
+        />
+        {/* Center dot/short line */}
+        <View
+          style={{
+            width: 2 * scale,
+            height: 2 * scale,
+            borderRadius: 1 * scale,
+            backgroundColor: color,
+            marginBottom: 1.5 * scale,
+          }}
+        />
+        {/* Two subtitle lines */}
+        <View style={{ flexDirection: "row", gap: 2 * scale }}>
+          <View
+            style={{
+              width: 6 * scale,
+              height: 1.6 * scale,
+              backgroundColor: color,
+              borderRadius: 0.8 * scale,
+            }}
+          />
+          <View
+            style={{
+              width: 6 * scale,
+              height: 1.6 * scale,
+              backgroundColor: color,
+              borderRadius: 0.8 * scale,
+            }}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Phone Hangup Icon (Red End Call Handset)
+ */
+export function PhoneHangupIcon({ size = 26, color = "#ffffff" }: IconProps) {
+  const scale = size / 26;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      {/* Downward curved phone handset */}
+      <View
+        style={{
+          width: 18 * scale,
+          height: 7.5 * scale,
+          borderTopLeftRadius: 9 * scale,
+          borderTopRightRadius: 9 * scale,
+          backgroundColor: color,
+          transform: [{ rotate: "180deg" }],
+          alignItems: "center",
+          justifyContent: "flex-end",
+        }}
+      >
+        <View
+          style={{
+            width: 10 * scale,
+            height: 3.5 * scale,
+            borderTopLeftRadius: 5 * scale,
+            borderTopRightRadius: 5 * scale,
+            backgroundColor: "#f04438",
+          }}
+        />
+      </View>
+      {/* Left earpiece */}
+      <View
+        style={{
+          position: "absolute",
+          left: 2 * scale,
+          bottom: 6 * scale,
+          width: 4.8 * scale,
+          height: 6.5 * scale,
+          borderRadius: 2 * scale,
+          backgroundColor: color,
+          transform: [{ rotate: "25deg" }],
+        }}
+      />
+      {/* Right earpiece */}
+      <View
+        style={{
+          position: "absolute",
+          right: 2 * scale,
+          bottom: 6 * scale,
+          width: 4.8 * scale,
+          height: 6.5 * scale,
+          borderRadius: 2 * scale,
+          backgroundColor: color,
+          transform: [{ rotate: "-25deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+/**
+ * Volume Speaker Icon (🔊 Purple audio play icon)
+ */
+export function VolumeSpeakerIcon({ size = 22, color = "#5e54eb" }: IconProps) {
+  const scale = size / 22;
+  return (
+    <View style={{ width: size, height: size, flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+      {/* Speaker box */}
+      <View
+        style={{
+          width: 4.5 * scale,
+          height: 7.5 * scale,
+          backgroundColor: color,
+          borderTopLeftRadius: 1.5 * scale,
+          borderBottomLeftRadius: 1.5 * scale,
+        }}
+      />
+      {/* Speaker cone */}
+      <View
+        style={{
+          width: 0,
+          height: 0,
+          borderTopWidth: 5.5 * scale,
+          borderBottomWidth: 5.5 * scale,
+          borderRightWidth: 6.5 * scale,
+          borderTopColor: "transparent",
+          borderBottomColor: "transparent",
+          borderRightColor: color,
+        }}
+      />
+      {/* Sound waves container */}
+      <View style={{ width: 6 * scale, height: 14 * scale, marginLeft: 2 * scale, justifyContent: "center" }}>
+        {/* Wave 1 */}
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            width: 4 * scale,
+            height: 9 * scale,
+            borderTopRightRadius: 4.5 * scale,
+            borderBottomRightRadius: 4.5 * scale,
+            borderRightWidth: 1.8 * scale,
+            borderTopWidth: 1.8 * scale,
+            borderBottomWidth: 1.8 * scale,
+            borderLeftWidth: 0,
+            borderColor: color,
+          }}
+        />
+        {/* Wave 2 */}
+        <View
+          style={{
+            position: "absolute",
+            left: 2.5 * scale,
+            width: 5 * scale,
+            height: 14 * scale,
+            borderTopRightRadius: 7 * scale,
+            borderBottomRightRadius: 7 * scale,
+            borderRightWidth: 1.8 * scale,
+            borderTopWidth: 1.8 * scale,
+            borderBottomWidth: 1.8 * scale,
+            borderLeftWidth: 0,
+            borderColor: color,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * AI Bot Avatar Icon for Top Bar Header Button
+ */
+export function AiBotOutlineIcon({ size = 20, color = "#1c2136" }: IconProps) {
+  const scale = size / 20;
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      {/* Antenna */}
+      <View
+        style={{
+          width: 2 * scale,
+          height: 2.5 * scale,
+          backgroundColor: color,
+          borderTopLeftRadius: 1 * scale,
+          borderTopRightRadius: 1 * scale,
+        }}
+      />
+      {/* Head */}
+      <View
+        style={{
+          width: 14 * scale,
+          height: 12 * scale,
+          borderRadius: 4.5 * scale,
+          borderWidth: 1.6 * scale,
+          borderColor: color,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {/* Eyes */}
+        <View style={{ flexDirection: "row", gap: 3 * scale }}>
+          <View style={{ width: 2 * scale, height: 2 * scale, borderRadius: 1 * scale, backgroundColor: color }} />
+          <View style={{ width: 2 * scale, height: 2 * scale, borderRadius: 1 * scale, backgroundColor: color }} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+
 

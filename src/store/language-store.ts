@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -23,4 +24,12 @@ export const useLanguageStore = create<LanguageState>()(
     },
   ),
 );
+
+export const useLanguageStoreHydrated = () => {
+  return useSyncExternalStore(
+    (onStoreChange) => useLanguageStore.persist.onFinishHydration(onStoreChange),
+    () => useLanguageStore.persist.hasHydrated(),
+    () => false,
+  );
+};
 
